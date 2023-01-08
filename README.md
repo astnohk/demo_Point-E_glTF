@@ -3,7 +3,7 @@ Demo programs for converting and saving Point-E output to glTF format by pygltfl
 
 
 ## Prerequisites
-Install Point-E [openai/point-e](https://github.com/openai/point-e) and runs examples to validate that your environment was built correclty.
+Install Point-E [openai/point-e](https://github.com/openai/point-e) and run examples to verify that your environment is built correclty.
 
 ## Runs
-Clone this repository, and just runs `txt2glTF.py` will produce `mesh.glTF` in current directly.
+Clone this repository, and just run `txt2glTF.py`. It produces `mesh.glTF` in current directly as a result.
