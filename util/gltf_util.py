@@ -1,7 +1,11 @@
 import numpy as np
 import pygltflib
+from point_e.util.mesh import TriMesh
 
-def write_gltf(path, mesh):
+def write_gltf(
+    path: str,
+    mesh: TriMesh,
+):
     triangles = np.asarray(mesh.faces, dtype=np.uint16)
     points = np.asarray(mesh.verts, dtype=np.float32)
     triangles_binary_blob = triangles.flatten().tobytes() # Flatten triangle index [N x 3]

@@ -1,6 +1,11 @@
+from typing import TextIO
 import numpy as np
+from point_e.util.mesh import TriMesh
 
-def write_xyz(f, pc):
+def write_xyz(
+    f: TextIO,
+    pc: TriMesh,
+):
     #np.stack([mesh.channels[x] for x in "RGB"], axis=1)
     length = pc.coords.shape[0]
     # X Y Z R G B
