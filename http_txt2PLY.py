@@ -18,6 +18,7 @@ from util import txt2mesh
 
 resultDir = None
 requestQueue = queue.Queue(3)
+resultIndex = {}
 
 
 class MyHTTPRequestHandler(BaseHTTPRequestHandler):
@@ -58,7 +59,9 @@ class MyHTTPRequestHandler(BaseHTTPRequestHandler):
                         }).encode())
             elif parsed_path.path == '/getResult':
                 key = queries['key'][0]
-                filepath = os.path.join(resultDir, '{}.ply'.format(key))
+                filepath = resultIndex.get(key)
+                if filepath is None:
+                    filepath = ""
                 if os.path.exists(filepath):
                     with open(filepath, 'rb') as f:
                         data = f.read()
@@ -188,8 +191,10 @@ if __name__ == '__main__':
 
         try:
             # Write the mesh to a PLY file to import into some other program.
-            with open(os.path.join(resultDir, '{}.ply'.format(request['key'])), 'wb') as f:
+            output_path = os.path.join(resultDir, '{}.ply'.format(request['key']))
+            with open(output_path, 'wb') as f:
                 mesh.write_ply(f)
+            resultIndex[request['key']] = output_path
         except Exception as err:
             print('[ERROR] Save PLY: ', end='')
             print(err)
