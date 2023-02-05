@@ -19,6 +19,7 @@ from util import gltf_util
 
 resultDir = None
 requestQueue = queue.Queue(3)
+resultIndex = {}
 
 
 class MyHTTPRequestHandler(BaseHTTPRequestHandler):
@@ -59,7 +60,9 @@ class MyHTTPRequestHandler(BaseHTTPRequestHandler):
                         }).encode())
             elif parsed_path.path == '/getResult':
                 key = queries['key'][0]
-                filepath = os.path.join(resultDir, '{}.glb'.format(key))
+                filepath = resultIndex.get(key)
+                if filepath is None:
+                    filepath = ""
                 if os.path.exists(filepath):
                     with open(filepath, 'rb') as f:
                         data = f.read()
@@ -105,10 +108,42 @@ class MyHTTPRequestHandler(BaseHTTPRequestHandler):
                 }).encode())
 
     def do_POST(self):
-        sefl.send_response(200)
-        self.send_header('Content-Type', 'application/json')
-        self.end_headers()
-        self.wfile.write(json.dumps({ 'message': 'Not Implemented' }))
+        parsed_path = urlparse(self.path)
+        print(parsed_path)
+        absolutePath = pathlib.Path(parsed_path.path).resolve()
+        queries = parse_qs(parsed_path.query)
+        content_length = int(self.headers['content-length'])
+        content = self.rfile.read(content_length).decode('utf-8')
+        try:
+            if parsed_path.path == '/request':
+                prompt = content
+                key = ''.join(random.choices('0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ', k=24))
+                try:
+                    requestQueue.put({
+                            'prompt': prompt,
+                            'key': key,
+                        })
+                except queue.Full:
+                    print('[ERROR] do_GET(): /request: request queue is Full.')
+                    key = None
+                    pass
+                if key is not None:
+                    self.send_response(200)
+                    self.send_header('Content-Type', 'text/plain')
+                    self.end_headers()
+                    self.wfile.write(key.encode())
+                else:
+                    self.send_response(500)
+                    self.send_header('Content-Type', 'text/plain')
+                    self.end_headers()
+                    self.wfile.write('Point-E is busy'.encode())
+        except Exception as err:
+            print('[ERROR] MyHTTPRequestHandler.do_POST(): ', end='')
+            print(err)
+            self.send_response(500)
+            self.send_header('Content-Type', 'text/plain')
+            self.end_headers()
+            self.wfile.write('Internal Server Error'.encode())
 
 def startHTTPServer(server_address):
     print('Start HTTP Server...')
@@ -157,9 +192,11 @@ if __name__ == '__main__':
 
         try:
             # Write the mesh to a PLY file to import into some other program.
+            output_path = os.path.join(resultDir, '{}.glb'.format(request['key']))
             gltf_util.write_gltf(
-                    os.path.join(resultDir, '{}.glb'.format(request['key'])),
+                    output_path,
                     mesh)
+            resultIndex[request['key']] = output_path
         except Exception as err:
             print('[ERROR] Save glTF: ', end='')
             print(err)
